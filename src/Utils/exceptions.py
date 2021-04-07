@@ -1,0 +1,4 @@
+class DataConsumerException(Exception):
+    pass
+
+
