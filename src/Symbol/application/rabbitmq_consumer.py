@@ -7,14 +7,13 @@ from pika import PlainCredentials, BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import ConnectionWrongStateError, AMQPConnectionError, AMQPChannelError
 
-from src.Symbol.domain.ports.data_consumer_interface import DataConsumerInterface
 from src.Utils.exceptions import DataConsumerException
 from src import settings as st
 
 
-class RabbitmqConsumerAdapter(DataConsumerInterface, threading.Thread):
+class RabbitmqConsumer(threading.Thread):
     def __init__(self):
-        super(RabbitmqConsumerAdapter, self).__init__()
+        super().__init__()
         self.connection = None
         self.channel = None
         self.connected = False
@@ -24,7 +23,7 @@ class RabbitmqConsumerAdapter(DataConsumerInterface, threading.Thread):
         self.connection = self.connect()
         self.channel = self.__setup_consumer()
 
-        self.channel.basic_consume(on_message_callback=self.on_message, queue=st.SYMBOLS_QUEUE)
+        self.channel.basic_consume(on_message_callback=self.__on_message, queue=st.SYMBOLS_QUEUE)
         self.channel.start_consuming()
 
     def connect(self) -> BlockingConnection:
@@ -41,6 +40,7 @@ class RabbitmqConsumerAdapter(DataConsumerInterface, threading.Thread):
                                      retry_delay=3))
         except (AMQPConnectionError, socket.gaierror) as e:
             st.logger.exception(e)
+            self.connected = False
             raise DataConsumerException()
 
         st.logger.info("Symbol rabbitmq consumer connected")
@@ -56,16 +56,16 @@ class RabbitmqConsumerAdapter(DataConsumerInterface, threading.Thread):
         finally:
             self.connected = False
 
-    def on_message(self, channel, basic_deliver, properties, body):
+    def __on_message(self, channel, basic_deliver, properties, body):
         message = ujson.loads(body)
         try:
             self.queue.put(message, timeout=1)
         except queue.Full:
             st.logger.warning("Message for symbol: {} cannot be processed, "
                               "will be resent to the exchange".format(message.get('ticker', 'unknown ticker')))
-            self.channel.basic_nack(delivery_tag=basic_deliver.delivery_tag)
+            channel.basic_nack(delivery_tag=basic_deliver.delivery_tag)
         else:
-            self.channel.basic_ack(delivery_tag=basic_deliver.delivery_tag)
+            channel.basic_ack(delivery_tag=basic_deliver.delivery_tag)
 
     def __setup_consumer(self) -> BlockingChannel:
         channel = None
@@ -80,8 +80,10 @@ class RabbitmqConsumerAdapter(DataConsumerInterface, threading.Thread):
                                    routing_key=st.SYMBOLS_ROUTING_KEY)
             except AMQPChannelError as e:
                 st.logger.exception(e)
+                self.connected = False
                 retry += 1
             else:
+                self.connected = True
                 return channel
 
         if channel is None:

@@ -47,4 +47,4 @@ RABBIT_VHOST = config.get("RABBIT", "rabbit_vhost")
 SYMBOLS_EXCHANGE = 'findata_symbols'
 SYMBOLS_EXCHANGE_TYPE = 'topic'
 SYMBOLS_QUEUE = 'fincalcs_symbols'
-SYMBOLS_ROUTING_KEY = 'findata.symbol'
+SYMBOLS_ROUTING_KEY = 'findata.symbols.#'
