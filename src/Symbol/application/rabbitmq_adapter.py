@@ -2,15 +2,17 @@ import queue
 
 from src.Symbol.application.rabbitmq_consumer import RabbitmqConsumer
 from src.Symbol.domain.ports.domain_service_interface import DomainServiceInterface
+from src.Symbol.domain.ports.repository_interface import RepositoryInterface
 from src.Symbol.domain.symbol import Symbol
-from src.Utils.exceptions import DataConsumerException, DomainServiceException
+from src.Utils.exceptions import DataConsumerException, DomainServiceException, RepositoryException
 from src import settings as st
 
 
 class RabbitmqServiceAdapter(DomainServiceInterface):
-    def __init__(self):
+    def __init__(self, repository: RepositoryInterface = None):
         super().__init__()
         self.consumer = self.__create_rabbit_consumer()
+        self.repository = repository
 
     def fetch_symbol_data(self) -> None:
         try:
@@ -26,7 +28,10 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
                 continue
             else:
                 symbol = self.__process_symbol_data_message(symbol_message)
-                self.repository.save_symbol_info(symbol)
+                try:
+                    self.repository.save_symbol(symbol)
+                except RepositoryException:
+                    pass
 
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
         return Symbol(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
