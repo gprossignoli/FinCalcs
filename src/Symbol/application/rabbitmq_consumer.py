@@ -11,20 +11,25 @@ from src.Utils.exceptions import DataConsumerException
 from src import settings as st
 
 
-class RabbitmqConsumer(threading.Thread):
-    def __init__(self):
+class RabbitmqConsumer:
+    def __init__(self, data_queue: queue.Queue):
         super().__init__()
         self.connection = None
         self.channel = None
         self.connected = False
-        self.queue = queue.Queue()
+        self.__queue = data_queue
 
-    def run(self):
+    def start_consumer(self):
         self.connection = self.connect()
-        self.channel = self.__setup_consumer()
+        try:
+            self.channel = self.__setup_consumer()
+        except DataConsumerException as e:
+            self.disconnect()
+            raise e
 
         self.channel.basic_consume(on_message_callback=self.__on_message, queue=st.SYMBOLS_QUEUE)
-        self.channel.start_consuming()
+        thread = threading.Thread(target=self.channel.start_consuming)
+        thread.start()
 
     def connect(self) -> BlockingConnection:
         """
@@ -59,7 +64,7 @@ class RabbitmqConsumer(threading.Thread):
     def __on_message(self, channel, basic_deliver, properties, body):
         message = ujson.loads(body)
         try:
-            self.queue.put(message, timeout=1)
+            self.__queue.put(message, timeout=1)
         except queue.Full:
             st.logger.warning("Message for symbol: {} cannot be processed, "
                               "will be resent to the exchange".format(message.get('ticker', 'unknown ticker')))
@@ -68,7 +73,6 @@ class RabbitmqConsumer(threading.Thread):
             channel.basic_ack(delivery_tag=basic_deliver.delivery_tag)
 
     def __setup_consumer(self) -> BlockingChannel:
-        channel = None
         retry = 0
         while retry < 3:
             try:
@@ -85,6 +89,5 @@ class RabbitmqConsumer(threading.Thread):
             else:
                 self.connected = True
                 return channel
-
-        if channel is None:
+        else:
             raise DataConsumerException()

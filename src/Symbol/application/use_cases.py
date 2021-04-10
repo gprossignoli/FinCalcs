@@ -15,5 +15,5 @@ class FetchSymbolsUseCase(UseCaseInterface):
         try:
             RabbitmqServiceAdapter(repository=MongoRepositoryAdapter()).fetch_symbol_data()
         except DomainServiceException:
-            st.logger.error("Service restart is required!")
+            st.logger.error("Fetch symbols use case error, service restart is required!")
             return

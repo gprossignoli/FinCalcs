@@ -11,17 +11,19 @@ from src import settings as st
 class RabbitmqServiceAdapter(DomainServiceInterface):
     def __init__(self, repository: RepositoryInterface = None):
         super().__init__()
+        self.__consumers_queue = queue.Queue()
         self.consumer = self.__create_rabbit_consumer()
         self.repository = repository
 
     def fetch_symbol_data(self) -> None:
         try:
-            self.consumer.start()
+            self.consumer.start_consumer()
         except DataConsumerException:
             raise DomainServiceException()
+
         while True:
             try:
-                symbol_message = self.consumer.queue.get(timeout=0.5)
+                symbol_message = self.__consumers_queue.get(timeout=0.5)
             except queue.Empty:
                 if not self.consumer.connected:
                     break
@@ -36,9 +38,8 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
         return Symbol(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
 
-    @staticmethod
-    def __create_rabbit_consumer() -> RabbitmqConsumer:
-        return RabbitmqConsumer()
+    def __create_rabbit_consumer(self) -> RabbitmqConsumer:
+        return RabbitmqConsumer(data_queue=self.__consumers_queue)
 
     def __process_symbol_data_message(self, symbol_message: dict) -> Symbol:
         validation = self.__validate_message_format(symbol_message)
