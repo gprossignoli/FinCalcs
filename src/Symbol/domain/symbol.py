@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -40,3 +41,6 @@ class Symbol:
         normalized_returns = self.historical_data['closures'] / self.historical_data['closures'].iloc[0]
         self.historical_data['returns'] = normalized_returns
         return normalized_returns
+
+
+SymbolInformation = namedtuple("SymbolInformation", "ticker, isin, name, closures, dividends, returns")

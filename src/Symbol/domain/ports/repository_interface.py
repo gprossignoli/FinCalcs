@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
+from typing import Union
 
-from src.Symbol.domain.symbol import Symbol
+from src.Symbol.domain.symbol import Symbol, SymbolInformation
 
 
 class RepositoryInterface(metaclass=ABCMeta):
@@ -22,23 +23,23 @@ class RepositoryInterface(metaclass=ABCMeta):
         raise NotImplemented
 
     @abstractmethod
-    def get_symbol(self, ticker: str) -> tuple:
+    def get_symbol(self, ticker: str) -> Union[SymbolInformation, bool]:
         """
         Gets the symbol from the db.
         :param ticker: ticker of the symbol
-        :return: Symbol information.
+        :return: Symbol information or False if none were found.
         """
         raise NotImplemented
 
     @abstractmethod
-    def get_symbols(self, tickers: tuple[str, ...]) -> tuple:
+    def get_symbols(self, tickers: tuple[str, ...]) -> Union[tuple[SymbolInformation, ...], bool]:
         """
         Gets the symbols from the db.
         :param tickers: tickers of the symbols
-        :return: Symbol information.
+        :return: Symbol information or False if none were found.
         """
         raise NotImplemented
-    
+
     @abstractmethod
     def clean_old_symbols(self) -> None:
         """

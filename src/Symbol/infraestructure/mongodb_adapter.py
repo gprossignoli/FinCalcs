@@ -1,11 +1,12 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
+from typing import Union
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.symbol import Symbol
+from src.Symbol.domain.symbol import Symbol, SymbolInformation
 from src.Utils.exceptions import RepositoryException
 from src import settings as st
 
@@ -38,11 +39,34 @@ class MongoRepositoryAdapter(RepositoryInterface):
         else:
             st.logger.info("Symbol {} updated".format(symbol.ticker))
 
-    def get_symbol(self) -> tuple:
-        pass
+    def get_symbol(self, ticker: str) -> Union[SymbolInformation, bool]:
+        try:
+            data = self.collection.find_one({"_id": ticker})
+        except PyMongoError as e:
+            st.logger.exception(e)
+            raise RepositoryException
+        if data is None:
+            return False
 
-    def get_symbols(self, tickers: tuple[str, ...]) -> tuple[Symbol, ...]:
-        pass
+        return SymbolInformation(ticker=data['_id'], isin=data['isin'], name=data['name'],
+                                 closures=data['historic_data']['closures'],
+                                 dividends=data['historic_data']['dividends'],
+                                 returns=data['historic_data']['daily_returns'])
+
+    def get_symbols(self, tickers: tuple[str, ...]) -> Union[tuple[SymbolInformation, ...], bool]:
+        try:
+            data = self.collection.find({"_id": {"$in": tickers}})
+        except PyMongoError as e:
+            st.logger.exception(e)
+            raise RepositoryException
+        if data is None:
+            return False
+
+        return tuple(SymbolInformation(ticker=symbol['_id'], isin=symbol['isin'], name=symbol['name'],
+                                       closures=symbol['historic_data']['closures'],
+                                       dividends=symbol['historic_data']['dividends'],
+                                       returns=symbol['historic_data']['daily_returns'])
+                     for symbol in data)
 
     def clean_old_symbols(self) -> None:
         try:
