@@ -51,7 +51,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
         return SymbolInformation(ticker=data['_id'], isin=data['isin'], name=data['name'],
                                  closures=data['historic_data']['closures'],
                                  dividends=data['historic_data']['dividends'],
-                                 returns=data['historic_data']['daily_returns'])
+                                 daily_returns=data['historic_data']['daily_returns'])
 
     def get_symbols(self, tickers: tuple[str, ...]) -> Union[tuple[SymbolInformation, ...], bool]:
         try:
@@ -65,7 +65,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
         return tuple(SymbolInformation(ticker=symbol['_id'], isin=symbol['isin'], name=symbol['name'],
                                        closures=symbol['historic_data']['closures'],
                                        dividends=symbol['historic_data']['dividends'],
-                                       returns=symbol['historic_data']['daily_returns'])
+                                       daily_returns=symbol['historic_data']['daily_returns'])
                      for symbol in data)
 
     def clean_old_symbols(self) -> None:

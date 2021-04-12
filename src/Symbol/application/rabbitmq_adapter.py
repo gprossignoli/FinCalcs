@@ -8,11 +8,16 @@ from src.Utils.exceptions import DataConsumerException, DomainServiceException, 
 from src import settings as st
 
 
+class MessageNotValid(Exception):
+    pass
+
+
 class RabbitmqServiceAdapter(DomainServiceInterface):
     def __init__(self, repository: RepositoryInterface = None):
         super().__init__()
         self.__consumers_queue = queue.Queue()
-        self.consumer = self.__create_rabbit_consumer()
+        self.consumer = self.__create_rabbit_consumer(rabbit_queue=st.SYMBOLS_QUEUE, exchange=st.SYMBOLS_EXCHANGE,
+                                                      routing_key=st.SYMBOLS_ALL_HISTORIC_ROUTING_KEY)
         self.repository = repository
 
     def fetch_symbol_data(self) -> None:
@@ -29,28 +34,36 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
                     break
                 continue
             else:
-                symbol = self.__process_symbol_data_message(symbol_message)
                 try:
-                    self.repository.save_symbol(symbol)
-                except RepositoryException:
-                    pass
+                    self.__process_symbol_data_message(symbol_message)
+                except MessageNotValid:
+                    continue
 
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
         return Symbol(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
 
-    def __create_rabbit_consumer(self) -> RabbitmqConsumer:
-        return RabbitmqConsumer(data_queue=self.__consumers_queue)
+    def __create_rabbit_consumer(self, rabbit_queue: str, exchange: str, routing_key: str) -> RabbitmqConsumer:
+        return RabbitmqConsumer(messages_received_queue=self.__consumers_queue, rabbit_queue=rabbit_queue,
+                                exchange=exchange, routing_key=routing_key)
 
-    def __process_symbol_data_message(self, symbol_message: dict) -> Symbol:
+    def __process_symbol_data_message(self, symbol_message: dict) -> None:
         validation = self.__validate_message_format(symbol_message)
         if not validation[0]:
             st.logger.error("Message from {} received with missing key: {}".format(st.SYMBOLS_QUEUE,
                                                                                    validation[1]))
+            raise MessageNotValid()
+        if symbol_message['routing_key'] == st.SYMBOLS_ALL_HISTORIC_ROUTING_KEY:
+            self.__save_symbol_all_historic(symbol_message)
+
+    def __save_symbol_all_historic(self, symbol_message) -> None:
         financial_data = {'close': symbol_message['historic']['close'],
                           'dividends': symbol_message['historic']['dividends']}
         symbol = self.create_symbol_entity(ticker=symbol_message['ticker'], isin=symbol_message['isin'],
                                            name=symbol_message['name'], historic_data=financial_data)
-        return symbol
+        try:
+            self.repository.save_symbol(symbol)
+        except RepositoryException:
+            pass
 
     @staticmethod
     def __validate_message_format(symbol_message: dict) -> tuple[bool, str]:
@@ -76,4 +89,7 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
             key_error = 'historic.dividends'
         else:
             key_error = None
+        if symbol_message.get('routing_key') is None:
+            symbol_message['routing_key'] = 'default'
+
         return (True, None) if key_error is None else (False, key_error)

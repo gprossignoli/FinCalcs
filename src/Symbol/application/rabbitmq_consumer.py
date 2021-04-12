@@ -12,12 +12,16 @@ from src import settings as st
 
 
 class RabbitmqConsumer:
-    def __init__(self, data_queue: queue.Queue):
+    def __init__(self, messages_received_queue: queue.Queue, rabbit_queue: str,
+                 exchange: str, routing_key: str):
         super().__init__()
         self.connection = None
         self.channel = None
         self.connected = False
-        self.__queue = data_queue
+        self.__rabbit_queue = rabbit_queue
+        self.__rabbit_exchange = exchange
+        self.__rabbit_routing_key = routing_key
+        self.__queue = messages_received_queue
 
     def start_consumer(self):
         self.connection = self.connect()
@@ -27,7 +31,7 @@ class RabbitmqConsumer:
             self.disconnect()
             raise e
 
-        self.channel.basic_consume(on_message_callback=self.__on_message, queue=st.SYMBOLS_QUEUE)
+        self.channel.basic_consume(on_message_callback=self.__on_message, queue=self.__rabbit_queue)
         thread = threading.Thread(target=self.channel.start_consuming)
         thread.start()
 
@@ -63,6 +67,7 @@ class RabbitmqConsumer:
 
     def __on_message(self, channel, basic_deliver, properties, body):
         message = ujson.loads(body)
+        message['routing_key'] = basic_deliver.routing_key
         try:
             self.__queue.put(message, timeout=1)
         except queue.Full:
@@ -78,10 +83,10 @@ class RabbitmqConsumer:
             try:
                 channel = self.connection.channel()
 
-                channel.queue_declare(queue=st.SYMBOLS_QUEUE)
+                channel.queue_declare(queue=self.__rabbit_queue)
                 channel.basic_qos(prefetch_count=1)
-                channel.queue_bind(exchange=st.SYMBOLS_EXCHANGE, queue=st.SYMBOLS_QUEUE,
-                                   routing_key=st.SYMBOLS_ROUTING_KEY)
+                channel.queue_bind(exchange=self.__rabbit_exchange, queue=self.__rabbit_queue,
+                                   routing_key=self.__rabbit_routing_key)
             except AMQPChannelError as e:
                 st.logger.exception(e)
                 self.connected = False
