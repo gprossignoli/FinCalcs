@@ -61,6 +61,20 @@ class MongoRepositoryAdapter(RepositoryInterface):
             raise RepositoryException
         if data is None:
             return False
+        return tuple(SymbolInformation(ticker=symbol['_id'], isin=symbol['isin'], name=symbol['name'],
+                                       closures=symbol['historic_data']['closures'],
+                                       dividends=symbol['historic_data']['dividends'],
+                                       daily_returns=symbol['historic_data']['daily_returns'])
+                     for symbol in data)
+
+    def get_all_symbols(self) -> Union[tuple[SymbolInformation, ...], bool]:
+        try:
+            data = self.collection.find({})
+        except PyMongoError as e:
+            st.logger.exception(e)
+            raise RepositoryException
+        if data is None:
+            return False
 
         return tuple(SymbolInformation(ticker=symbol['_id'], isin=symbol['isin'], name=symbol['name'],
                                        closures=symbol['historic_data']['closures'],

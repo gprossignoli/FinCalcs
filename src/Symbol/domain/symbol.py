@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
-from pandas import DataFrame
 
 
 @dataclass
@@ -21,7 +20,11 @@ class Symbol:
 
     @staticmethod
     def __process_historical_data(data: dict) -> dict[str, pd.Series]:
-        indexes = tuple(datetime.strptime(i, '%Y-%m-%d %H:%M:%S').date() for i in tuple(data['close'].keys()))
+        try:
+            indexes = tuple(datetime.strptime(i, '%Y-%m-%d %H:%M:%S').date() for i in tuple(data['close'].keys()))
+        except ValueError:
+            indexes = tuple(datetime.strptime(i, '%Y-%m-%d').date() for i in tuple(data['close'].keys()))
+
         closures = pd.Series(data=data['close'].values(), index=indexes)
         closures.index = pd.to_datetime(closures.index)
         dividends = pd.Series(data=data['dividends'].values(), index=indexes)

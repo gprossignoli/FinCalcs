@@ -48,3 +48,6 @@ SYMBOLS_EXCHANGE = 'findata_symbols'
 SYMBOLS_EXCHANGE_TYPE = 'topic'
 SYMBOLS_QUEUE = 'fincalcs_symbols'
 SYMBOLS_ALL_HISTORIC_ROUTING_KEY = 'findata.symbol.all_historic'
+
+# Is commonly accepted that there are 252 business days in the year.
+ANNUALIZATION_FACTOR = 252
