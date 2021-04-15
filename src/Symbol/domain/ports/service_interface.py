@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from pandas import DataFrame
 
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.symbol import Symbol
+from src.Symbol.domain.symbol import Symbol, Index
 
 
 class DomainServiceInterface(metaclass=ABCMeta):
@@ -13,7 +13,10 @@ class DomainServiceInterface(metaclass=ABCMeta):
         return (hasattr(subclass, 'fetch_symbol_data') and
                 callable(subclass.fetch_symbol_data) and
                 hasattr(subclass, 'create_symbol_entity') and
-                callable(subclass.create_symbol_entity)) or NotImplemented
+                callable(subclass.create_symbol_entity) and
+                hasattr(subclass, 'create_index_entity') and
+                callable(subclass.create_index_entity)
+                ) or NotImplemented
 
     def __init__(self, repository: RepositoryInterface = None):
         self.repository = repository
@@ -29,4 +32,8 @@ class DomainServiceInterface(metaclass=ABCMeta):
 
     @abstractmethod
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: DataFrame) -> Symbol:
+        raise NotImplemented
+
+    @abstractmethod
+    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: DataFrame) -> Index:
         raise NotImplemented

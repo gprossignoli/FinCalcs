@@ -16,10 +16,10 @@ class Symbol:
         self.ticker = ticker
         self.isin = isin
         self.name = name
-        self.historical_data = self.__process_historical_data(historical_data)
+        self.historical_data = self._process_historical_data(historical_data)
 
     @staticmethod
-    def __process_historical_data(data: dict) -> dict[str, pd.Series]:
+    def _process_historical_data(data: dict) -> dict[str, pd.Series]:
         try:
             indexes = tuple(datetime.strptime(i, '%Y-%m-%d %H:%M:%S').date() for i in tuple(data['close'].keys()))
         except ValueError:
@@ -57,6 +57,24 @@ class Symbol:
         self.historical_data['daily_returns'] = self.historical_data['closures'].pct_change()
         self.historical_data['dividends'] = self.historical_data['dividends'].append(pd.Series(index=[date],
                                                                                                data=[dividend]))
+
+
+class Index(Symbol):
+    @staticmethod
+    def _process_historical_data(data: dict) -> dict[str, pd.Series]:
+        try:
+            indexes = tuple(datetime.strptime(i, '%Y-%m-%d %H:%M:%S').date() for i in tuple(data['close'].keys()))
+        except ValueError:
+            indexes = tuple(datetime.strptime(i, '%Y-%m-%d').date() for i in tuple(data['close'].keys()))
+
+        closures = pd.Series(data=data['close'].values(), index=indexes)
+        closures.index = pd.to_datetime(closures.index)
+        if data.get('daily_returns') is not None:
+            daily_returns = pd.Series(data=data['daily_returns'].values(), index=indexes)
+            daily_returns.index = pd.to_datetime(daily_returns.index)
+            return {'closures': closures, 'daily_returns': daily_returns}
+
+        return {'closures': closures}
 
 
 SymbolInformation = namedtuple("SymbolInformation", "ticker, isin, name, closures, dividends, daily_returns")

@@ -11,6 +11,10 @@ class RepositoryInterface(metaclass=ABCMeta):
                 callable(subclass.save_symbol) and
                 hasattr(subclass, 'get_symbol') and
                 callable(subclass.get_symbol) and
+                hasattr(subclass, 'get_symbols') and
+                callable(subclass.get_symbols) and
+                hasattr(subclass, 'get_all_symbols') and
+                callable(subclass.get_all_symbols) and
                 hasattr(subclass, 'clean_old_symbols') and
                 callable(subclass.clean_old_symbols)
                 ) or NotImplemented
@@ -36,6 +40,14 @@ class RepositoryInterface(metaclass=ABCMeta):
         """
         Gets the symbols from the db.
         :param tickers: tickers of the symbols
+        :return: Symbol information or False if none were found.
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def get_all_symbols(self) -> Union[tuple[SymbolInformation, ...], bool]:
+        """
+        Gets all the symbols from the db.
         :return: Symbol information or False if none were found.
         """
         raise NotImplemented

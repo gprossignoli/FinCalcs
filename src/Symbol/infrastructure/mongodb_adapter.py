@@ -112,8 +112,9 @@ class MongoRepositoryAdapter(RepositoryInterface):
         historic_data['closures'].index = formatted_indexes
         historic_data['closures'] = historic_data['closures'].to_json()
 
-        historic_data['dividends'].index = formatted_indexes
-        historic_data['dividends'] = historic_data['dividends'].to_json()
+        if historic_data.get('dividends') is not None:
+            historic_data['dividends'].index = formatted_indexes
+            historic_data['dividends'] = historic_data['dividends'].to_json()
 
         historic_data['daily_returns'] = deepcopy(symbol.daily_returns)
         historic_data['daily_returns'].index = formatted_indexes

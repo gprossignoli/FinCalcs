@@ -1,9 +1,10 @@
-import dataclasses
+import math
 
 import pandas as pd
 from pandas import DataFrame
 
 from src.Symbol.domain.symbol import Symbol
+from src import settings as st
 
 
 class Portfolio:
@@ -15,18 +16,32 @@ class Portfolio:
         self.first_date, self.last_date = self.__compute_common_date()
 
     @property
-    def returns(self) -> pd.Series:
-        """
-        Computes the portfolio returns.
-        :return: DataFrame with the portfolio's returns indexed by day.
-        """
-        weighted_rets = DataFrame(data=[symbol.historical_data['daily_returns'][self.first_date:]
+    def weighted_returns(self) -> pd.Series:
+        weighted_rets = DataFrame(data=[symbol.historical_data['daily_returns'][self.first_date:self.last_date]
                                   .rename(index=symbol.ticker, inplace=True) * self.weights[symbol.ticker]
                                         for symbol in self.symbols]).transpose()
         return weighted_rets.sum(axis=1)
 
+    @property
+    def volatility(self):
+        return self.weighted_returns.std()
+
+    @property
+    def annualized_volatility(self):
+        return self.volatility * math.sqrt(st.ANNUALIZATION_FACTOR)
+
+    @property
+    def annualized_returns(self):
+        cumulative_return = (self.weighted_returns[-1] - self.weighted_returns[1])\
+                            / self.weighted_returns[1]
+        return (1 + cumulative_return)**(365/st.ANNUALIZATION_FACTOR) - 1
+
+    @property
+    def sharpe_ratio(self):
+        return (self.annualized_returns - st.RISK_FREE_RATIO) / self.annualized_volatility
+
     def __compute_common_date(self) -> tuple:
         common_idx = self.symbols[0].daily_returns.index
         for symbol in self.symbols:
-            common_idx = common_idx.intersection(symbol.historical_data['daily_returns'].index[:10])
-        return common_idx[0], common_idx[:-1]
+            common_idx = common_idx.intersection(symbol.historical_data['daily_returns'].index)
+        return common_idx[0], common_idx[-1]

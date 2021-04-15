@@ -1,9 +1,9 @@
 import queue
 
 from src.Symbol.application.rabbitmq_consumer import RabbitmqConsumer
-from src.Symbol.domain.ports.domain_service_interface import DomainServiceInterface
+from src.Symbol.domain.ports.service_interface import DomainServiceInterface
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.symbol import Symbol
+from src.Symbol.domain.symbol import Symbol, Index
 from src.Utils.exceptions import DataConsumerException, DomainServiceException, RepositoryException
 from src import settings as st
 
@@ -17,7 +17,7 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
         super().__init__()
         self.__consumers_queue = queue.Queue()
         self.consumer = self.__create_rabbit_consumer(rabbit_queue=st.SYMBOLS_QUEUE, exchange=st.SYMBOLS_EXCHANGE,
-                                                      routing_key=st.SYMBOLS_ALL_HISTORIC_ROUTING_KEY)
+                                                      routing_key=st.SYMBOLS_TOPIC_ROUTING_KEY)
         self.repository = repository
 
     def fetch_symbol_data(self) -> None:
@@ -42,6 +42,9 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
         return Symbol(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
 
+    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
+        return Index(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
+
     def __create_rabbit_consumer(self, rabbit_queue: str, exchange: str, routing_key: str) -> RabbitmqConsumer:
         return RabbitmqConsumer(messages_received_queue=self.__consumers_queue, rabbit_queue=rabbit_queue,
                                 exchange=exchange, routing_key=routing_key)
@@ -54,6 +57,8 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
             raise MessageNotValid()
         if symbol_message['routing_key'] == st.SYMBOLS_ALL_HISTORIC_ROUTING_KEY:
             self.__save_symbol_all_historic(symbol_message)
+        elif symbol_message['routing_key'] == st.SYMBOLS_INDEX_ROUTING_KEY:
+            self.__save_index(symbol_message)
 
     def __save_symbol_all_historic(self, symbol_message) -> None:
         financial_data = {'close': symbol_message['historic']['close'],
@@ -65,6 +70,15 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
         except RepositoryException:
             pass
 
+    def __save_index(self, symbol_message) -> None:
+        financial_data = {'close': symbol_message['historic']['close']}
+        index = self.create_index_entity(ticker=symbol_message['ticker'], isin=symbol_message['isin'],
+                                         name=symbol_message['name'], historic_data=financial_data)
+        try:
+            self.repository.save_symbol(index)
+        except RepositoryException:
+            pass
+
     @staticmethod
     def __validate_message_format(symbol_message: dict) -> tuple[bool, str]:
         """
@@ -72,6 +86,8 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
         :param symbol_message: Message received from the consumer.
         :return: True,None if message is valid, False,Missing_key if is not valid.
         """
+        if symbol_message.get('routing_key') is None:
+            symbol_message['routing_key'] = 'default'
 
         historic = symbol_message.get('historic')
 
@@ -85,11 +101,10 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
             key_error = 'historic'
         elif historic.get('close') is None:
             key_error = 'historic.close'
-        elif historic.get('dividends') is None:
+        elif symbol_message.get('routing_key') == st.SYMBOLS_ALL_HISTORIC_ROUTING_KEY and \
+                historic.get('dividends') is None:
             key_error = 'historic.dividends'
         else:
             key_error = None
-        if symbol_message.get('routing_key') is None:
-            symbol_message['routing_key'] = 'default'
 
         return (True, None) if key_error is None else (False, key_error)

@@ -3,7 +3,7 @@ import os
 import configparser
 from logging.handlers import RotatingFileHandler
 
-ROOT_DIR = os.path.dirname(os.path.abspath("settings.py"))
+ROOT_DIR = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 settings_file = open(os.path.join(ROOT_DIR, "settings.ini"), "r")
 config = configparser.ConfigParser()
 config.read(os.path.join(ROOT_DIR, "settings.ini"))
@@ -47,7 +47,12 @@ RABBIT_VHOST = config.get("RABBIT", "rabbit_vhost")
 SYMBOLS_EXCHANGE = 'findata_symbols'
 SYMBOLS_EXCHANGE_TYPE = 'topic'
 SYMBOLS_QUEUE = 'fincalcs_symbols'
+SYMBOLS_TOPIC_ROUTING_KEY = 'findata.symbol.#'
 SYMBOLS_ALL_HISTORIC_ROUTING_KEY = 'findata.symbol.all_historic'
+SYMBOLS_INDEX_ROUTING_KEY = 'findata.symbol.index'
 
-# Is commonly accepted that there are 252 business days in the year.
+
+# Is commonly accepted that there are 252 trading days in the year.
 ANNUALIZATION_FACTOR = 252
+# We assume a 2%
+RISK_FREE_RATIO = 0.02
