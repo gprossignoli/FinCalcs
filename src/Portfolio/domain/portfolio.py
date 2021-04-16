@@ -36,6 +36,17 @@ class Portfolio:
                             / self.weighted_returns[1]
         return (1 + cumulative_return)**(365/st.ANNUALIZATION_FACTOR) - 1
 
+    @property
+    def mdd(self):
+        """
+        Max Drawdown
+        """
+        cum_rets = self.weighted_returns.add(1).cumprod()
+        nav = ((1 + cum_rets) * 100).fillna(100)
+        hwm = nav.cummax()
+        dd = nav / hwm - 1
+        return min(dd)
+
     def sharpe_ratio(self):
         return (self.annualized_returns - st.RISK_FREE_RATIO) / self.annualized_volatility
 
@@ -43,6 +54,9 @@ class Portfolio:
         neg_asset_returns = (self.weighted_returns[self.weighted_returns < 0][self.first_date:self.last_date])
         std_dev = neg_asset_returns.std()
         return (self.annualized_returns - benchmark_returns) / (std_dev * math.sqrt(st.ANNUALIZATION_FACTOR))
+
+    def calmar_ratio(self):
+        return (self.annualized_returns - st.RISK_FREE_RATIO) / self.mdd
 
     def __compute_common_date(self) -> tuple:
         common_idx = self.symbols[0].daily_returns.index
