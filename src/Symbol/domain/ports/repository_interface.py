@@ -1,13 +1,15 @@
 from abc import ABCMeta, abstractmethod
 from typing import Union
 
-from src.Symbol.domain.symbol import Symbol, SymbolInformation
+from src.Symbol.domain.symbol import Symbol, SymbolInformation, Index
 
 
 class RepositoryInterface(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'save_symbol') and
+                callable(subclass.save_index) and
+                hasattr(subclass, 'save_index') and
                 callable(subclass.save_symbol) and
                 hasattr(subclass, 'get_symbol') and
                 callable(subclass.get_symbol) and
@@ -23,6 +25,13 @@ class RepositoryInterface(metaclass=ABCMeta):
     def save_symbol(self, symbol: Symbol) -> None:
         """
         Save a symbol entity into the db
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def save_index(self, index: Index) -> None:
+        """
+        Save a index entity into the db
         """
         raise NotImplemented
 

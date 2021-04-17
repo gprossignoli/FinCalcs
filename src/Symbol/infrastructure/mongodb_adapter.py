@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.symbol import Symbol, SymbolInformation
+from src.Symbol.domain.symbol import Symbol, SymbolInformation, Index
 from src.Utils.exceptions import RepositoryException
 from src import settings as st
 
@@ -17,7 +17,8 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
     def __init__(self):
         self.__connect_to_db()
-        self.collection = self.__db_client['fincalcs']['symbols']
+        self.symbols_collection = self.__db_client['fincalcs']['symbols']
+        self.indexes_collection = self.__db_client['fincalcs']['indexes']
 
     def save_symbol(self, symbol: Symbol):
         st.logger.info("Updating symbol {}".format(symbol.ticker))
@@ -31,7 +32,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
                                "historic_data": historic_data}}
 
         try:
-            self.collection.update_one(filter=doc_filter, update=doc_values, upsert=True)
+            self.symbols_collection.update_one(filter=doc_filter, update=doc_values, upsert=True)
         except PyMongoError as e:
             st.logger.exception(e)
             st.logger.info("Symbol {} not updated due to an error".format(symbol.ticker))
@@ -39,9 +40,29 @@ class MongoRepositoryAdapter(RepositoryInterface):
         else:
             st.logger.info("Symbol {} updated".format(symbol.ticker))
 
+    def save_index(self, index: Index):
+        st.logger.info("Updating index {}".format(index.ticker))
+
+        historic_data = self.__historic_data_to_json(index)
+
+        doc_filter = {'_id': index.ticker}
+        doc_values = {"$set": {"isin": index.isin,
+                               "name": index.name,
+                               "date": datetime.utcnow(),
+                               "historic_data": historic_data}}
+
+        try:
+            self.indexes_collection.update_one(filter=doc_filter, update=doc_values, upsert=True)
+        except PyMongoError as e:
+            st.logger.exception(e)
+            st.logger.info("Index {} not updated due to an error".format(index.ticker))
+            raise RepositoryException()
+        else:
+            st.logger.info("Index {} updated".format(index.ticker))
+
     def get_symbol(self, ticker: str) -> Union[SymbolInformation, bool]:
         try:
-            data = self.collection.find_one({"_id": ticker})
+            data = self.symbols_collection.find_one({"_id": ticker})
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException
@@ -55,7 +76,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
     def get_symbols(self, tickers: tuple[str, ...]) -> Union[tuple[SymbolInformation, ...], bool]:
         try:
-            data = self.collection.find({"_id": {"$in": tickers}})
+            data = self.symbols_collection.find({"_id": {"$in": tickers}})
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException
@@ -69,7 +90,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
     def get_all_symbols(self) -> Union[tuple[SymbolInformation, ...], bool]:
         try:
-            data = self.collection.find({})
+            data = self.symbols_collection.find({})
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException
@@ -84,7 +105,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
     def clean_old_symbols(self) -> None:
         try:
-            data = self.collection.find({})
+            data = self.symbols_collection.find({})
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException
@@ -99,7 +120,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
             return
         try:
             st.logger("Cleaning symbols with tickers: {}".format(symbols_to_delete))
-            self.collection.delete_many({"_id": {"$in": symbols_to_delete}})
+            self.symbols_collection.delete_many({"_id": {"$in": symbols_to_delete}})
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException

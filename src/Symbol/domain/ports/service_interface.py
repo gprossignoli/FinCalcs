@@ -1,4 +1,3 @@
-import typing
 from abc import ABCMeta, abstractmethod
 
 from pandas import DataFrame
@@ -7,12 +6,10 @@ from src.Symbol.domain.ports.repository_interface import RepositoryInterface
 from src.Symbol.domain.symbol import Symbol, Index
 
 
-class DomainServiceInterface(metaclass=ABCMeta):
+class ServiceInterface(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'fetch_symbol_data') and
-                callable(subclass.fetch_symbol_data) and
-                hasattr(subclass, 'create_symbol_entity') and
+        return (hasattr(subclass, 'create_symbol_entity') and
                 callable(subclass.create_symbol_entity) and
                 hasattr(subclass, 'create_index_entity') and
                 callable(subclass.create_index_entity)
@@ -22,18 +19,9 @@ class DomainServiceInterface(metaclass=ABCMeta):
         self.repository = repository
 
     @abstractmethod
-    def fetch_symbol_data(self) -> None:
-        """
-        Gets the symbol data, converts it to a symbol entity,
-        precalculates it's financials data, and saves into the db.
-        :param symbol_data:  dictionary with all the information.
-        """
+    def create_symbol_entity(self, *args) -> Symbol:
         raise NotImplemented
 
     @abstractmethod
-    def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: DataFrame) -> Symbol:
-        raise NotImplemented
-
-    @abstractmethod
-    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: DataFrame) -> Index:
+    def create_index_entity(self, *args) -> Index:
         raise NotImplemented

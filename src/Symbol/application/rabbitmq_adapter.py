@@ -1,7 +1,7 @@
 import queue
 
 from src.Symbol.application.rabbitmq_consumer import RabbitmqConsumer
-from src.Symbol.domain.ports.service_interface import DomainServiceInterface
+from src.Symbol.domain.ports.service_interface import ServiceInterface
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
 from src.Symbol.domain.symbol import Symbol, Index
 from src.Utils.exceptions import DataConsumerException, DomainServiceException, RepositoryException
@@ -12,7 +12,7 @@ class MessageNotValid(Exception):
     pass
 
 
-class RabbitmqServiceAdapter(DomainServiceInterface):
+class RabbitmqServiceAdapter(ServiceInterface):
     def __init__(self, repository: RepositoryInterface = None):
         super().__init__()
         self.__consumers_queue = queue.Queue()
@@ -21,6 +21,10 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
         self.repository = repository
 
     def fetch_symbol_data(self) -> None:
+        """
+        Gets the symbol data, converts it to a symbol entity,
+        precalculates it's financials data, and saves into the db.
+        """
         try:
             self.consumer.start_consumer()
         except DataConsumerException:
@@ -42,7 +46,7 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
     def create_symbol_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
         return Symbol(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
 
-    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
+    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Index:
         return Index(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
 
     def __create_rabbit_consumer(self, rabbit_queue: str, exchange: str, routing_key: str) -> RabbitmqConsumer:
@@ -75,7 +79,7 @@ class RabbitmqServiceAdapter(DomainServiceInterface):
         index = self.create_index_entity(ticker=symbol_message['ticker'], isin=symbol_message['isin'],
                                          name=symbol_message['name'], historic_data=financial_data)
         try:
-            self.repository.save_symbol(index)
+            self.repository.save_index(index)
         except RepositoryException:
             pass
 
