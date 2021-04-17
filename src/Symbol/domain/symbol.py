@@ -17,6 +17,7 @@ class Symbol:
         self.isin = isin
         self.name = name
         self.historical_data = self._process_historical_data(historical_data)
+        self.closures = self.historical_data['closures']
 
     @staticmethod
     def _process_historical_data(data: dict) -> dict[str, pd.Series]:
@@ -50,6 +51,25 @@ class Symbol:
             return self.historical_data.get('daily_returns')
         self.historical_data['daily_returns'] = self.historical_data['closures'].pct_change()
         return self.historical_data['daily_returns']
+
+    def cagr(self, period: str):
+        """
+        Compound annual growth rate
+        :param period: could be '3yr' or '5yr'
+        :return:
+        """
+        today = self.closures.index[-1]
+        today = datetime(today.year, today.month, today.day)
+        if period == '3yr':
+            n = 3
+            first_date = datetime(today.year - 3, today.month, today.day)
+        elif period == '5yr':
+            n = 5
+            first_date = datetime(today.year - 5, today.month, today.day)
+
+        closes = self.closures[self.closures.index >= first_date]
+        cagr = (closes[-1] / closes[0])**1/n - 1
+        return cagr
 
     def add_new_day(self, close_price: float, date: datetime, dividend: float):
         self.historical_data['closures'] = self.historical_data['closures'].append(pd.Series(index=[date],
