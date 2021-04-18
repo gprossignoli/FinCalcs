@@ -1,4 +1,3 @@
-# Press the green button in the gutter to run the script.
 import time
 
 from src.Symbol.application.use_cases import FetchSymbolsUseCase

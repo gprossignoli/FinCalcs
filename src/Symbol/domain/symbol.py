@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Union, Any
 
 import pandas as pd
 
@@ -44,8 +44,6 @@ class Symbol:
         return self.closures.index[-1]
 
     def _compute_daily_returns(self) -> pd.Series:
-        if self.daily_returns is not None:
-            return self.daily_returns
         self.daily_returns = self.closures.pct_change()
         return self.daily_returns
 
@@ -57,29 +55,13 @@ class Index(Symbol):
 class Stock(Symbol):
     def __init__(self, ticker: str, isin: str, name: str, closures: dict, dividends: dict,
                  daily_returns: dict = None):
-        super().__init__(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
+        super(Stock, self).__init__(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
+        self.dividends = self._process_dividends_data(dividends)
 
-        self.closures, self.dividends, processed_daily_returns = \
-            self._process_historical_data(closures=closures, daily_returns=daily_returns, dividends=dividends)
-
-        self.daily_returns = (self._compute_daily_returns()
-                              if processed_daily_returns is None else processed_daily_returns)
-
-    def _process_historical_data(self, closures: dict,
-                                 daily_returns: dict = None, **kwargs) -> tuple[pd.Series, pd.Series,
-                                                                                Union[pd.Series, None]]:
+    def _process_dividends_data(self, dividends: dict) -> pd.Series:
         """
-        :param closures: closures of the symbol as dict
-        :param daily_returns: (optional) daily_returns of the symbol as dict, if None, would be computed.
-        :param args: only expected dividends: dict (same as closures but for dividends)
+        :param dividends: dict
         :return: historic data of the symbol with properly pd.Series
         """
-        dividends = kwargs['dividends']
-
-        pd_closures, pd_daily_returns = super(Stock, self)._process_historical_data(closures, daily_returns)
-
-        pd_dividends = pd.Series(data=dividends.values(), index=pd_closures.index)
-        if pd_daily_returns is not None:
-            return pd_closures, pd_dividends, pd_daily_returns
-
-        return pd_closures, pd_dividends, None
+        pd_dividends = pd.Series(data=dividends.values(), index=self.closures.index)
+        return pd_dividends

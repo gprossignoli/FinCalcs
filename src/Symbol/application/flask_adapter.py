@@ -1,54 +1,54 @@
-import queue
+from typing import Union
 
-from src.Symbol.application.rabbitmq_consumer import RabbitmqConsumer
-from src.Symbol.domain.ports.service_interface import ServiceInterface
+from src.Symbol.domain.ports.driver_service_interface import DriverServiceInterface, SymbolStatisticsTransfer, \
+    SymbolInformationTransfer
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.symbol import Symbol, Index
-from src.Utils.exceptions import DataConsumerException, DomainServiceException, RepositoryException
+from src.Symbol.domain.domain_service import DomainService, StockTransfer
+from src.Symbol.domain.symbol import Stock
+from src.Utils.exceptions import ServiceException, RepositoryException
 from src import settings as st
 
 
-class MessageNotValid(Exception):
-    pass
+class FlaskServiceAdapter(DriverServiceInterface):
+    def __init__(self, repository: RepositoryInterface, domain_service: DomainService):
+        super().__init__(repository=repository, domain_service=domain_service)
 
+    def get_symbol(self, symbol_ticker: str) -> Union[SymbolStatisticsTransfer, bool]:
+        symbol_data = self.repository.get_symbol(ticker=symbol_ticker)
+        if not symbol_data:
+            return False
 
-class FlaskServiceAdapter(ServiceInterface):
-    def __init__(self, repository: RepositoryInterface = None):
-        super().__init__()
-        self.repository = repository
+        symbol = self.domain_service.create_symbol_entity(ticker=symbol_data['ticker'], isin=symbol_data['isin'],
+                                                          name=symbol_data['name'], closures=symbol_data['closures'],
+                                                          daily_returns=symbol_data.get('daily_returns'),
+                                                          dividends=symbol_data.get('dividends'))
 
-    def get_symbols_info(self) -> tuple[dict, ...]:
-        """
-        Obtains all symbols ticker, isin and name.
-        """
-        symbols = self.repository.get_all_symbols()
+        cagr = {'3yr': self.domain_service.compute_cagr(symbol, period='3yr'),
+                '5yr': self.domain_service.compute_cagr(symbol, period='5yr')}
+
+        if isinstance(symbol, Stock):
+            return StockTransfer(ticker=symbol.ticker, isin=symbol.isin, name=symbol.name,
+                                 closures=symbol.closures, daily_returns=symbol.daily_returns,
+                                 dividends=symbol.dividends, first_date=symbol.first_date,
+                                 last_date=symbol.last_date, cagr=cagr)
+
+        return SymbolStatisticsTransfer(ticker=symbol.ticker, isin=symbol.isin, name=symbol.name,
+                                        closures=symbol.closures, daily_returns=symbol.daily_returns,
+                                        first_date=symbol.first_date, last_date=symbol.last_date,
+                                        cagr=cagr)
+
+    def get_stocks_info(self) -> tuple[SymbolInformationTransfer, ...]:
+        stocks = self.repository.get_all_symbols(symbol_type='stock')
         ret = []
-        for s in symbols:
-            ret.append({'ticker': s.ticker,
-                        'isin': s.isin,
-                        'name': s.name})
+        for stock in stocks:
+            ret.append(SymbolInformationTransfer(ticker=stock['ticker'], isin=stock['isin'], name=stock['name']))
         return tuple(ret)
 
-    def get_symbol(self, symbol_ticker: str):
-        symbol = self.repository.get_symbol(ticker=symbol_ticker)
-        return {'ticker': symbol.ticker, 'isin': symbol.isin, 'name': symbol.name,
-                'historic_data': {'closures': symbol.closures, 'daily_returns': symbol.daily_returns}}
-
-    def get_symbol_with_statistics(self, symbol_ticker: str):
-        symb_data = self.repository.get_symbol(ticker=symbol_ticker)
-        symbol = self.create_symbol_entity(ticker=symb_data.ticker, isin=symb_data.isin,
-                                           name=symb_data.name, closes=symb_data.closures,
-                                           daily_returns=symb_data.daily_returns, dividends=symb_data.dividends)
-        cagr_3yr = symbol.cagr(period='3yr')
-        cagr_5yr = symbol.cagr(period='5yr')
-        return {'ticker': symbol.ticker, 'isin': symbol.isin, 'name': symbol.name,
-                'historic_data': {'closures': symbol.closures, 'daily_returns': symbol.daily_returns},
-                'cagr': {'3yr': cagr_3yr, '5yr': cagr_5yr}}
-
-    def create_symbol_entity(self, ticker: str, isin: str, name: str, closes: dict, dividends: dict,
-                             daily_returns: dict) -> Symbol:
-        return Symbol(ticker=ticker, isin=isin, name=name, historical_data={'close': closes, 'dividends': dividends,
-                                                                            'daily_returns': daily_returns})
-
-    def create_index_entity(self, ticker: str, isin: str, name: str, historic_data: dict) -> Symbol:
-        return Index(ticker=ticker, isin=isin, name=name, historical_data=historic_data)
+    def get_indexes_info(self) -> tuple[SymbolInformationTransfer, ...]:
+        indexes = self.repository.get_all_symbols(symbol_type='index')
+        ret = []
+        for index in indexes:
+            if not index:
+                ret.append(False)
+            ret.append(SymbolInformationTransfer(ticker=index['ticker'], isin=index['isin'], name=index['name']))
+        return tuple(ret)

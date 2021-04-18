@@ -2,7 +2,7 @@ class DataConsumerException(Exception):
     pass
 
 
-class DomainServiceException(Exception):
+class ServiceException(Exception):
     pass
 
 

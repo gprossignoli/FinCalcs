@@ -48,7 +48,7 @@ SYMBOLS_EXCHANGE = 'findata_symbols'
 SYMBOLS_EXCHANGE_TYPE = 'topic'
 SYMBOLS_QUEUE = 'fincalcs_symbols'
 SYMBOLS_TOPIC_ROUTING_KEY = 'findata.symbol.#'
-SYMBOLS_ALL_HISTORIC_ROUTING_KEY = 'findata.symbol.all_historic'
+SYMBOLS_STOCK_ROUTING_KEY = 'findata.symbol.stock'
 SYMBOLS_INDEX_ROUTING_KEY = 'findata.symbol.index'
 
 

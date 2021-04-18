@@ -1,8 +1,54 @@
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, Literal
 
 from src.Symbol.domain.symbol import Symbol, Index, Stock
 from src import settings as st
+
+
+@dataclass
+class SymbolTransfer:
+    """
+    first_date: Year%month%day%
+    last_date: Year%month%day%
+    closures: {Year%month%day%: float}
+    daily_returns: {Year%month%day%: float}
+    """
+    ticker: str
+    isin: str
+    name: str
+    first_date: str
+    last_date: str
+    closures: dict
+    daily_returns: dict
+
+
+@dataclass
+class SymbolStatisticsTransfer(SymbolTransfer):
+    """
+    cagr: {"3yr": float, "5yr": float}
+    """
+    cagr: dict
+
+
+@dataclass
+class StockTransfer(SymbolStatisticsTransfer):
+    """
+    dividends: {Year%month%day%: float}
+    """
+    dividends: dict
+
+
+@dataclass
+class IndexTransfer(SymbolStatisticsTransfer):
+    pass
+
+
+@dataclass
+class SymbolInformationTransfer:
+    ticker: str
+    isin: str
+    name: str
 
 
 class DomainService:
