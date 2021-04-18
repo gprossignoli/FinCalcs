@@ -52,6 +52,9 @@ SYMBOLS_ALL_HISTORIC_ROUTING_KEY = 'findata.symbol.all_historic'
 SYMBOLS_INDEX_ROUTING_KEY = 'findata.symbol.index'
 
 
+# Ibex35, S&P500, Dow Jones, Nasdaq, Euro stoxx50, EURONEXT100.
+EXCHANGES = ('^IBEX', '^GSPC', '^DJI', '^IXIC', '^STOXX50E', '^N100')
+
 # Is commonly accepted that there are 252 trading days in the year.
 ANNUALIZATION_FACTOR = 252
 # We assume a 2%
