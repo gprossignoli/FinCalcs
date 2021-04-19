@@ -54,10 +54,11 @@ class SymbolInformationTransfer:
 class DomainService:
     @staticmethod
     def create_symbol_entity(ticker: str, isin: str, name: str,
-                             closures: dict, dividends: dict = None, daily_returns: dict = None) -> Symbol:
-        if dividends is not None:
+                             closures: dict, exchange: str = None,
+                             dividends: dict = None, daily_returns: dict = None) -> Symbol:
+        if dividends is not None and exchange is not None:
             return Stock(ticker=ticker, isin=isin, name=name, closures=closures,
-                         dividends=dividends, daily_returns=daily_returns)
+                         dividends=dividends, daily_returns=daily_returns, exchange=exchange)
         elif ticker in st.EXCHANGES:
             return Index(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
 

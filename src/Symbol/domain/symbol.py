@@ -54,9 +54,10 @@ class Index(Symbol):
 
 class Stock(Symbol):
     def __init__(self, ticker: str, isin: str, name: str, closures: dict, dividends: dict,
-                 daily_returns: dict = None):
+                 exchange: str, daily_returns: dict = None):
         super(Stock, self).__init__(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
         self.dividends = self._process_dividends_data(dividends)
+        self.exchange = exchange
 
     def _process_dividends_data(self, dividends: dict) -> pd.Series:
         """

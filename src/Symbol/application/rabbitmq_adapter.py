@@ -48,7 +48,7 @@ class RabbitmqServiceAdapter(DrivenServiceInterface):
         dividends = stock_info['historic']['dividends']
         stock = self.domain_service.create_symbol_entity(ticker=stock_info['ticker'], isin=stock_info['isin'],
                                                          name=stock_info['name'], closures=closures,
-                                                         dividends=dividends)
+                                                         exchange=stock_info['exchange'], dividends=dividends)
         try:
             self.repository.save_stock(stock)
         except RepositoryException:

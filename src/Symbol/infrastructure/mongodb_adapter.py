@@ -29,6 +29,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
                                "closures": ujson.dumps(stock.closures.to_dict()),
                                "dividends": ujson.dumps(stock.dividends.to_dict()),
                                "daily_returns": ujson.dumps(stock.daily_returns.to_dict()),
+                               "exchange": stock.exchange,
                                "type": "stock"}}
 
         try:
@@ -47,8 +48,8 @@ class MongoRepositoryAdapter(RepositoryInterface):
         doc_values = {"$set": {"isin": index.isin,
                                "name": index.name,
                                "date": datetime.utcnow(),
-                               "closures": index.closures.to_dict(),
-                               "daily_returns": index.daily_returns.to_dict(),
+                               "closures": ujson.dumps(index.closures.to_dict()),
+                               "daily_returns": ujson.dumps(index.daily_returns.to_dict()),
                                "type": "index"}}
 
         try:
