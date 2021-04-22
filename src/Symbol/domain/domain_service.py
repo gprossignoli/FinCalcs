@@ -37,6 +37,7 @@ class StockTransfer(SymbolStatisticsTransfer):
     dividends: {Year%month%day%: float}
     """
     dividends: dict
+    exchange: str
 
 
 @dataclass
@@ -49,6 +50,11 @@ class SymbolInformationTransfer:
     ticker: str
     isin: str
     name: str
+
+
+@dataclass
+class StockInformationTransfer(SymbolInformationTransfer):
+    exchange: str
 
 
 class DomainService:
@@ -65,7 +71,8 @@ class DomainService:
         else:
             return Symbol(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
 
-    def compute_cagr(self, entity: Union[Index, Stock], period: Literal['3yr', '5yr'] = '3yr') -> float:
+    @staticmethod
+    def compute_cagr(entity: Union[Index, Stock], period: Literal['3yr', '5yr'] = '3yr') -> float:
         """
         Compound annual growth rate
         :param entity: Entity for which compute the cagr.

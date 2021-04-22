@@ -1,12 +1,10 @@
 from typing import Union
 
-from src.Symbol.domain.ports.driver_service_interface import DriverServiceInterface, SymbolStatisticsTransfer, \
-    SymbolInformationTransfer
+from src.Symbol.domain.ports.driver_service_interface import DriverServiceInterface
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.domain_service import DomainService, StockTransfer
+from src.Symbol.domain.domain_service import DomainService, StockTransfer, StockInformationTransfer, \
+    SymbolStatisticsTransfer, SymbolInformationTransfer
 from src.Symbol.domain.symbol import Stock
-from src.Utils.exceptions import ServiceException, RepositoryException
-from src import settings as st
 
 
 class FlaskServiceAdapter(DriverServiceInterface):
@@ -20,6 +18,7 @@ class FlaskServiceAdapter(DriverServiceInterface):
 
         symbol = self.domain_service.create_symbol_entity(ticker=symbol_data['ticker'], isin=symbol_data['isin'],
                                                           name=symbol_data['name'], closures=symbol_data['closures'],
+                                                          exchange=symbol_data.get('exchange'),
                                                           daily_returns=symbol_data.get('daily_returns'),
                                                           dividends=symbol_data.get('dividends'))
 
@@ -37,11 +36,12 @@ class FlaskServiceAdapter(DriverServiceInterface):
                                         first_date=symbol.first_date, last_date=symbol.last_date,
                                         cagr=cagr)
 
-    def get_stocks_info(self) -> tuple[SymbolInformationTransfer, ...]:
+    def get_stocks_info(self) -> tuple[StockInformationTransfer, ...]:
         stocks = self.repository.get_all_symbols(symbol_type='stock')
         ret = []
         for stock in stocks:
-            ret.append(SymbolInformationTransfer(ticker=stock['ticker'], isin=stock['isin'], name=stock['name']))
+            ret.append(StockInformationTransfer(ticker=stock['ticker'], isin=stock['isin'], name=stock['name'],
+                                                exchange=stock['exchange']))
         return tuple(ret)
 
     def get_indexes_info(self) -> tuple[SymbolInformationTransfer, ...]:

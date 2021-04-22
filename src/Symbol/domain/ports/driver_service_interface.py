@@ -2,7 +2,8 @@ from abc import ABCMeta, abstractmethod
 from typing import Union
 
 from src.Symbol.domain.ports.repository_interface import RepositoryInterface
-from src.Symbol.domain.domain_service import DomainService, SymbolInformationTransfer, SymbolStatisticsTransfer
+from src.Symbol.domain.domain_service import DomainService, SymbolInformationTransfer, SymbolStatisticsTransfer, \
+    StockInformationTransfer
 
 
 class DriverServiceInterface(metaclass=ABCMeta):
@@ -20,7 +21,7 @@ class DriverServiceInterface(metaclass=ABCMeta):
         self.domain_service = domain_service
 
     @abstractmethod
-    def get_stocks_info(self) -> tuple[SymbolInformationTransfer, ...]:
+    def get_stocks_info(self) -> tuple[StockInformationTransfer, ...]:
         """
         Looks for the stocks info.
 

@@ -70,14 +70,19 @@ class MongoRepositoryAdapter(RepositoryInterface):
         if data is None:
             return False
 
+        closures = ujson.loads(data['closures'])
         ret = {'ticker': data['_id'], 'isin': data['isin'],
-               'name': data['name'], 'closures': data['closures']}
+               'name': data['name'], 'closures': closures}
         dividends = data.get('dividends')
         if dividends is not None:
-            ret['dividends'] = dividends
+            ret['dividends'] = ujson.loads(dividends)
         daily_returns = data.get('daily_returns')
         if daily_returns is not None:
-            ret['daily_returns'] = daily_returns
+            ret['daily_returns'] = ujson.loads(daily_returns.replace("NaN","null"))
+        exchange = data.get('exchange')
+        if exchange is not None:
+            ret['exchange'] = exchange
+
         return ret
 
     def get_symbols(self, tickers: tuple[str, ...]) -> Union[tuple[dict, ...], bool]:
@@ -91,14 +96,18 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
         symbols = list()
         for d in data:
+            closures = ujson.loads(d['closures'])
             symbol_info = {'ticker': d['_id'], 'isin': d['isin'],
-                           'name': d['name'], 'closures': d['closures']}
+                           'name': d['name'], 'closures': closures}
             dividends = d.get('dividends')
             if dividends is not None:
-                symbol_info['dividends'] = dividends
+                symbol_info['dividends'] = ujson.loads(dividends)
             daily_returns = d.get('daily_returns')
             if daily_returns is not None:
-                symbol_info['daily_returns'] = daily_returns
+                symbol_info['daily_returns'] = ujson.loads(daily_returns.replace("NaN","null"))
+            exchange = d.get('exchange')
+            if exchange is not None:
+                symbol_info['exchange'] = exchange
 
             symbols.append(symbol_info)
 
