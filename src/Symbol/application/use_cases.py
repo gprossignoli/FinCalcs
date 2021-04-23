@@ -1,3 +1,5 @@
+import threading
+
 from src.Symbol.domain.ports.use_case_interface import UseCaseInterface
 from src.Symbol.domain.domain_service import DomainService
 from src.Symbol.application.rabbitmq_adapter import RabbitmqServiceAdapter
@@ -14,8 +16,11 @@ class FetchSymbolsUseCase(UseCaseInterface):
         """
         st.logger.info("Starting fetch symbols use case")
         try:
-            RabbitmqServiceAdapter(repository=MongoRepositoryAdapter(),
-                                   domain_service=DomainService()).fetch_symbol_data()
+            rabbit_adapter = RabbitmqServiceAdapter(repository=MongoRepositoryAdapter(),
+                                                    domain_service=DomainService())
+            thread = threading.Thread(target=rabbit_adapter.fetch_symbol_data)
+            thread.start()
+
         except ServiceException:
             st.logger.error("Fetch symbols use case error, service restart is required!")
             return
