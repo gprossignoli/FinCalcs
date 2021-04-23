@@ -18,6 +18,9 @@ class FlaskServiceAdapter(DriverServiceInterface):
             raise PortfolioException(error="Invalid ticker")
 
         symbols_data = self.symbol_repository.get_symbols(tickers=tickers)
+        if not symbols_data:
+            raise PortfolioException(error="No symbols found")
+
         symbols = []
         for symbol in symbols_data:
             symbols.append(self.symbol_domain_service.

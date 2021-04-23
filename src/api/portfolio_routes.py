@@ -7,7 +7,7 @@ from src.Portfolio.application.flask_adapter import FlaskServiceAdapter
 from src.Portfolio.domain.domain_service import DomainService
 from src.Symbol.domain.domain_service import DomainService as SymbolDomainService
 from src.Symbol.infrastructure.mongodb_adapter import MongoRepositoryAdapter
-
+from src.Utils.exceptions import PortfolioException
 
 portfolio_blueprint = Blueprint(name='portfolio', import_name=__name__, url_prefix='/portfolio')
 
@@ -33,12 +33,23 @@ def get_portfolio_analysis():
     input = request.form.get('sharesPerStock').split(",")
     for stock in input:
         s = stock.split(":")
-        shares_per_stock[s[0]] = int(s[1])
+        shares_per_stock[s[0].strip()] = int(s[1])
     body['shares_per_stock'] = shares_per_stock
     try:
         v = Validator(schema=schema)
         v.allow_unknown = True
         val = v.validate(body, schema)
+        tickers = body['tickers']
+        shares_per_stock = list(body['shares_per_stock'].keys())
+
+        if len(tickers) != len(shares_per_stock):
+            return Response(response="Invalid request: number of tickers not equals "
+                                     "to number of shares_per_stock's keys indicated", status=400,
+                            mimetype='application/json')
+        if tickers != shares_per_stock:
+            return Response(response="Invalid request: Tickers and shares_per_stock's keys should match.", status=400,
+                            mimetype='application/json')
+
     except ValidationError as e:
         return Response(response='Invalid request: tickers not valid', status=400,
                         mimetype='application/json')
@@ -47,7 +58,13 @@ def get_portfolio_analysis():
         return Response(response='Invalid request: tickers not valid', status=400,
                         mimetype='application/json')
 
-    portfolio_info = (portfolio_service.create_portfolio(tickers=tuple(body['tickers']),
-                                                         n_shares_per_symbol=body['shares_per_stock']))
-
-    return Response(response=ujson.dumps(portfolio_info.to_json()), status=200, mimetype='application/json')
+    try:
+        portfolio_info = (portfolio_service.create_portfolio(tickers=tuple(body['tickers']),
+                                                             n_shares_per_symbol=body['shares_per_stock']))
+    except PortfolioException as e:
+        if e.error == 'No symbols found':
+            return Response(response=ujson.dumps(e.error), status=404, mimetype='application/json')
+        elif e.error == 'Invalid ticker':
+            return Response(response=ujson.dumps(e.error), status=400, mimetype='application/json')
+    else:
+        return Response(response=ujson.dumps(portfolio_info.to_json()), status=200, mimetype='application/json')

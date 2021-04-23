@@ -91,8 +91,6 @@ class MongoRepositoryAdapter(RepositoryInterface):
         except PyMongoError as e:
             st.logger.exception(e)
             raise RepositoryException
-        if data is None:
-            return False
 
         symbols = list()
         for d in data:
@@ -110,6 +108,9 @@ class MongoRepositoryAdapter(RepositoryInterface):
                 symbol_info['exchange'] = exchange
 
             symbols.append(symbol_info)
+
+        if not symbols:
+            return False
 
         return tuple(symbols)
 
