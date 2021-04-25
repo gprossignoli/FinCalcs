@@ -45,8 +45,7 @@ class MongoRepositoryAdapter(RepositoryInterface):
         st.logger.info("Updating index {}".format(index.ticker))
 
         doc_filter = {'_id': index.ticker}
-        doc_values = {"$set": {"isin": index.isin,
-                               "name": index.name,
+        doc_values = {"$set": {"name": index.name,
                                "date": datetime.utcnow(),
                                "closures": ujson.dumps(index.closures.to_dict()),
                                "daily_returns": ujson.dumps(index.daily_returns.to_dict()),
@@ -71,8 +70,11 @@ class MongoRepositoryAdapter(RepositoryInterface):
             return False
 
         closures = ujson.loads(data['closures'])
-        ret = {'ticker': data['_id'], 'isin': data['isin'],
-               'name': data['name'], 'closures': closures}
+        ret = {'ticker': data['_id'], 'name': data['name'], 'closures': closures}
+
+        isin = data.get('isin')
+        if isin is not None:
+            ret['isin'] = isin
         dividends = data.get('dividends')
         if dividends is not None:
             ret['dividends'] = ujson.loads(dividends)
@@ -95,8 +97,11 @@ class MongoRepositoryAdapter(RepositoryInterface):
         symbols = list()
         for d in data:
             closures = ujson.loads(d['closures'])
-            symbol_info = {'ticker': d['_id'], 'isin': d['isin'],
-                           'name': d['name'], 'closures': closures}
+            symbol_info = {'ticker': d['_id'], 'name': d['name'], 'closures': closures}
+
+            isin = d.get('isin')
+            if isin is not None:
+                symbol_info['isin'] = isin
             dividends = d.get('dividends')
             if dividends is not None:
                 symbol_info['dividends'] = ujson.loads(dividends)
@@ -124,8 +129,11 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
         symbols = list()
         for d in data:
-            symbol_info = {'ticker': d['_id'], 'isin': d['isin'],
-                           'name': d['name'], 'closures': d['closures']}
+            symbol_info = {'ticker': d['_id'], 'name': d['name'], 'closures': d['closures']}
+
+            isin = d.get('isin')
+            if isin is not None:
+                symbol_info['isin'] = isin
             dividends = d.get('dividends')
             if dividends is not None:
                 symbol_info['dividends'] = dividends

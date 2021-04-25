@@ -56,8 +56,8 @@ class RabbitmqServiceAdapter(DrivenServiceInterface):
 
     def save_index(self, index_info: dict) -> None:
         closures = index_info['historic']['close']
-        index = self.domain_service.create_symbol_entity(ticker=index_info['ticker'], isin=index_info['isin'],
-                                                         name=index_info['name'], closures=closures)
+        index = self.domain_service.create_symbol_entity(ticker=index_info['ticker'], name=index_info['name'],
+                                                         closures=closures)
         try:
             self.repository.save_index(index)
         except RepositoryException:
@@ -92,7 +92,8 @@ class RabbitmqServiceAdapter(DrivenServiceInterface):
 
         if symbol_message.get('ticker') is None:
             key_error = 'ticker'
-        elif symbol_message.get('isin') is None:
+        elif symbol_message.get('routing_key') != st.SYMBOLS_INDEX_ROUTING_KEY and \
+                symbol_message.get('isin') is None:
             key_error = 'isin'
         elif symbol_message.get('name') is None:
             key_error = 'name'

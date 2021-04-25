@@ -5,9 +5,8 @@ import pandas as pd
 
 
 class Symbol:
-    def __init__(self, ticker: str, isin: str, name: str, closures: dict, daily_returns: dict = None):
+    def __init__(self, ticker: str, name: str, closures: dict, daily_returns: dict = None):
         self.ticker = ticker
-        self.isin = isin
         self.name = name
         self.closures, processed_daily_returns = self._process_historical_data(closures, daily_returns)
         self.daily_returns = (self._compute_daily_returns()
@@ -55,8 +54,9 @@ class Index(Symbol):
 class Stock(Symbol):
     def __init__(self, ticker: str, isin: str, name: str, closures: dict, dividends: dict,
                  exchange: str, daily_returns: dict = None):
-        super(Stock, self).__init__(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
+        super(Stock, self).__init__(ticker=ticker, name=name, closures=closures, daily_returns=daily_returns)
         self.dividends = self._process_dividends_data(dividends)
+        self.isin = isin
         self.exchange = exchange
 
     def _process_dividends_data(self, dividends: dict) -> pd.Series:

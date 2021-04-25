@@ -70,7 +70,6 @@ class FlaskServiceAdapter(DriverServiceInterface):
             for benchmark in benchmarks:
                 index_data = self.symbol_repository.get_symbol(benchmark)
                 index = self.symbol_domain_service.create_symbol_entity(ticker=index_data['ticker'],
-                                                                        isin=index_data['isin'],
                                                                         name=index_data['name'],
                                                                         closures=index_data['closures'],
                                                                         daily_returns=index_data.get('daily_returns'),

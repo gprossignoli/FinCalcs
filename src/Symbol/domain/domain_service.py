@@ -59,17 +59,17 @@ class StockInformationTransfer(SymbolInformationTransfer):
 
 class DomainService:
     @staticmethod
-    def create_symbol_entity(ticker: str, isin: str, name: str,
-                             closures: dict, exchange: str = None,
+    def create_symbol_entity(ticker: str, closures: dict, name: str,
+                             isin: str = None, exchange: str = None,
                              dividends: dict = None, daily_returns: dict = None) -> Symbol:
         if dividends is not None and exchange is not None:
             return Stock(ticker=ticker, isin=isin, name=name, closures=closures,
                          dividends=dividends, daily_returns=daily_returns, exchange=exchange)
         elif ticker in st.EXCHANGES:
-            return Index(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
+            return Index(ticker=ticker, name=name, closures=closures, daily_returns=daily_returns)
 
         else:
-            return Symbol(ticker=ticker, isin=isin, name=name, closures=closures, daily_returns=daily_returns)
+            return Symbol(ticker=ticker, name=name, closures=closures, daily_returns=daily_returns)
 
     @staticmethod
     def compute_cagr(entity: Union[Index, Stock], period: Literal['3yr', '5yr'] = '3yr') -> float:
