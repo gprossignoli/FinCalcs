@@ -16,7 +16,7 @@ class FlaskServiceAdapter(DriverServiceInterface):
         if not symbol_data:
             return False
 
-        symbol = self.domain_service.create_symbol_entity(ticker=symbol_data['ticker'], isin=symbol_data['isin'],
+        symbol = self.domain_service.create_symbol_entity(ticker=symbol_data['ticker'], isin=symbol_data.get('isin'),
                                                           name=symbol_data['name'], closures=symbol_data['closures'],
                                                           exchange=symbol_data.get('exchange'),
                                                           daily_returns=symbol_data.get('daily_returns'),
@@ -29,9 +29,9 @@ class FlaskServiceAdapter(DriverServiceInterface):
             return StockTransfer(ticker=symbol.ticker, isin=symbol.isin, name=symbol.name,
                                  closures=symbol.closures, daily_returns=symbol.daily_returns,
                                  dividends=symbol.dividends, first_date=symbol.first_date,
-                                 last_date=symbol.last_date, cagr=cagr)
+                                 last_date=symbol.last_date, cagr=cagr, exchange=symbol.exchange)
 
-        return SymbolStatisticsTransfer(ticker=symbol.ticker, isin=symbol.isin, name=symbol.name,
+        return SymbolStatisticsTransfer(ticker=symbol.ticker, name=symbol.name,
                                         closures=symbol.closures, daily_returns=symbol.daily_returns,
                                         first_date=symbol.first_date, last_date=symbol.last_date,
                                         cagr=cagr)
@@ -50,5 +50,5 @@ class FlaskServiceAdapter(DriverServiceInterface):
         for index in indexes:
             if not index:
                 ret.append(False)
-            ret.append(SymbolInformationTransfer(ticker=index['ticker'], isin=index['isin'], name=index['name']))
+            ret.append(SymbolInformationTransfer(ticker=index['ticker'], name=index['name']))
         return tuple(ret)

@@ -140,6 +140,9 @@ class MongoRepositoryAdapter(RepositoryInterface):
             daily_returns = d.get('daily_returns')
             if daily_returns is not None:
                 symbol_info['daily_returns'] = daily_returns
+            exchange = d.get('exchange')
+            if exchange is not None:
+                symbol_info['exchange'] = exchange
 
             symbols.append(symbol_info)
 

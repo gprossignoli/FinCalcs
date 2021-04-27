@@ -1,3 +1,4 @@
+import typing
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, Literal
@@ -15,12 +16,20 @@ class SymbolTransfer:
     daily_returns: {Year%month%day%: float}
     """
     ticker: str
-    isin: str
     name: str
-    first_date: str
-    last_date: str
+    first_date: datetime.timestamp
+    last_date: datetime.timestamp
     closures: dict
     daily_returns: dict
+
+    def to_json(self):
+        json = {'ticker': self.ticker, 'name': self.name,
+                'first_date': self.first_date.strftime('%d-%m-%Y'), 'last_date': self.last_date.strftime('%d-%m-%Y'),
+                'closures': {k.strftime('%d-%m-%Y'): str(round(v, 4)).replace('nan', 'null')
+                             for k, v in self.closures.items()},
+                'daily_returns': {k.strftime('%d-%m-%Y'): str(round(v, 4)).replace('nan', 'null')
+                                  for k, v in self.daily_returns.items()}}
+        return json
 
 
 @dataclass
@@ -30,6 +39,11 @@ class SymbolStatisticsTransfer(SymbolTransfer):
     """
     cagr: dict
 
+    def to_json(self):
+        json = super(SymbolStatisticsTransfer, self).to_json()
+        json['cagr'] = {k: str(round(v, 4)) for k, v in self.cagr.items()}
+        return json
+
 
 @dataclass
 class StockTransfer(SymbolStatisticsTransfer):
@@ -38,6 +52,15 @@ class StockTransfer(SymbolStatisticsTransfer):
     """
     dividends: dict
     exchange: str
+    isin: str
+
+    def to_json(self):
+        json = super(StockTransfer, self).to_json()
+        json['dividends'] = {k.strftime('%d-%m-%Y'): str(round(v, 4)).replace('nan', 'null')
+                             for k, v in self.dividends.items()}
+        json['isin'] = self.isin
+        json['exchange'] = self.exchange
+        return json
 
 
 @dataclass
@@ -48,13 +71,23 @@ class IndexTransfer(SymbolStatisticsTransfer):
 @dataclass
 class SymbolInformationTransfer:
     ticker: str
-    isin: str
     name: str
+
+    def to_json(self):
+        json = {'ticker': self.ticker, 'name': self.name}
+        return json
 
 
 @dataclass
 class StockInformationTransfer(SymbolInformationTransfer):
     exchange: str
+    isin: str
+
+    def to_json(self):
+        json = super(StockInformationTransfer, self).to_json()
+        json['exchange'] = self.exchange
+        json['isin'] = self.isin
+        return json
 
 
 class DomainService:
