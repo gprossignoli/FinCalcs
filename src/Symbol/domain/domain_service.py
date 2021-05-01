@@ -72,9 +72,13 @@ class IndexTransfer(SymbolStatisticsTransfer):
 class SymbolInformationTransfer:
     ticker: str
     name: str
+    last_price: dict
+    last_return: dict
 
     def to_json(self):
-        json = {'ticker': self.ticker, 'name': self.name}
+        json = {'ticker': self.ticker, 'name': self.name,
+                'last_price': {k: str(v) for k, v in self.last_price.items()},
+                'last_return': {k: str(v) for k, v in self.last_return.items()}}
         return json
 
 
@@ -124,5 +128,5 @@ class DomainService:
             first_date = datetime(today.year - 5, today.month, today.day)
 
         closes = entity.closures[entity.closures.index >= first_date]
-        cagr = (closes[-1] / closes[0]) ** 1 / n - 1
+        cagr = ((closes[-1] / closes[0]) ** (1 / n)) - 1
         return cagr

@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 
 import numpy as np
@@ -12,9 +13,9 @@ from src import settings as st
 class PortfolioTransfer:
     symbols: tuple[str]
     total_shares: int
-    weights: dict[str, int]
-    first_date: str
-    last_date: str
+    weights: dict[str, float]
+    first_date: datetime.date
+    last_date: datetime.date
     returns: dict[str, str]
     volatility: dict[str, str]
 
@@ -36,17 +37,17 @@ class PortfolioStatisticsTransfer(PortfolioTransfer):
     annualized_volatility: float
     maximum_drawdown: float
     sharpe_ratio: float
-    sortino_ratio: float
+    sortino_ratio: dict[str, float]
     calmar_ratio: float
 
     def to_json(self):
         json = super().to_json()
-        json['annualized_returns'] = self.annualized_returns
-        json['annualized_volatility'] = self.annualized_volatility
-        json['maximum_drawdown'] = self.maximum_drawdown
-        json['sharpe_ratio'] = self.sharpe_ratio
-        json['sortino_ratio'] = self.sortino_ratio
-        json['calmar_ratio'] = self.calmar_ratio
+        json['annualized_returns'] = str(self.annualized_returns)
+        json['annualized_volatility'] = str(self.annualized_volatility)
+        json['maximum_drawdown'] = str(self.maximum_drawdown)
+        json['sharpe_ratio'] = str(self.sharpe_ratio)
+        json['sortino_ratio'] = {k: str(v) for k, v in self.sortino_ratio.items()}
+        json['calmar_ratio'] = str(self.calmar_ratio)
         return json
 
 

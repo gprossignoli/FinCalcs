@@ -22,7 +22,7 @@ def get_portfolio_analysis():
     schema = {
         'tickers': {
             'type': 'list',
-            'schema': {'type': 'string', 'min': 0},
+            'schema': {'type': 'string', 'min': 1},
             'nullable': False,
             'empty': False
         }

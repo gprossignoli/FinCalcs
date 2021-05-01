@@ -40,8 +40,12 @@ class FlaskServiceAdapter(DriverServiceInterface):
         stocks = self.repository.get_all_symbols(symbol_type='stock')
         ret = []
         for stock in stocks:
+            last_price_data = list(stock['closures'].items())[0]
+            last_return_data = list(stock['daily_returns'].items())[0]
             ret.append(StockInformationTransfer(ticker=stock['ticker'], isin=stock['isin'], name=stock['name'],
-                                                exchange=stock['exchange']))
+                                                exchange=stock['exchange'],
+                                                last_price={'date': last_price_data[0], 'value': last_price_data[1]},
+                                                last_return={'date': last_return_data[0], 'value': last_price_data[1]}))
         return tuple(ret)
 
     def get_indexes_info(self) -> tuple[SymbolInformationTransfer, ...]:
@@ -50,5 +54,9 @@ class FlaskServiceAdapter(DriverServiceInterface):
         for index in indexes:
             if not index:
                 ret.append(False)
-            ret.append(SymbolInformationTransfer(ticker=index['ticker'], name=index['name']))
+            last_price_data = list(index['closures'].items())[0]
+            last_return_data = list(index['daily_returns'].items())[0]
+            ret.append(SymbolInformationTransfer(ticker=index['ticker'], name=index['name'],
+                                                 last_price={'date': last_price_data[0], 'value': last_price_data[1]},
+                                                 last_return={'date': last_return_data[0], 'value': last_price_data[1]}))
         return tuple(ret)

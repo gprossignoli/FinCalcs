@@ -129,17 +129,17 @@ class MongoRepositoryAdapter(RepositoryInterface):
 
         symbols = list()
         for d in data:
-            symbol_info = {'ticker': d['_id'], 'name': d['name'], 'closures': d['closures']}
+            symbol_info = {'ticker': d['_id'], 'name': d['name'], 'closures': ujson.loads(d['closures'])}
 
             isin = d.get('isin')
             if isin is not None:
                 symbol_info['isin'] = isin
             dividends = d.get('dividends')
             if dividends is not None:
-                symbol_info['dividends'] = dividends
+                symbol_info['dividends'] = ujson.loads(dividends)
             daily_returns = d.get('daily_returns')
             if daily_returns is not None:
-                symbol_info['daily_returns'] = daily_returns
+                symbol_info['daily_returns'] = ujson.loads(daily_returns.replace("NaN", "null"))
             exchange = d.get('exchange')
             if exchange is not None:
                 symbol_info['exchange'] = exchange
