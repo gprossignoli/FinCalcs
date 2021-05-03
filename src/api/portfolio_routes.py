@@ -27,11 +27,12 @@ def get_portfolio_analysis():
             'empty': False
         }
     }
-
-    body = {'tickers': [ticker.strip() for ticker in request.form.get('tickers').split(",")]}
+    data = request.data if len(request.data) > 0 else request.form
+    data = ujson.loads(data)
+    body = {'tickers': [ticker.strip() for ticker in data.get('tickers').split(",")]}
     shares_per_stock = {}
-    input = request.form.get('sharesPerStock').split(",")
-    for stock in input:
+    sps_input = data.get('sharesPerStock').split(",")
+    for stock in sps_input:
         s = stock.split(":")
         shares_per_stock[s[0].strip()] = int(s[1])
     body['shares_per_stock'] = shares_per_stock

@@ -16,8 +16,8 @@ class PortfolioTransfer:
     weights: dict[str, float]
     first_date: datetime.date
     last_date: datetime.date
-    returns: dict[str, str]
-    volatility: dict[str, str]
+    returns: dict
+    volatility: dict
 
     def to_json(self):
         return {
@@ -26,8 +26,10 @@ class PortfolioTransfer:
             'weights': {k: str(v) for k, v in self.weights.items()},
             'first_date': self.first_date.strftime("%d-%m-%Y"),
             'last_date': self.last_date.strftime("%d-%m-%Y"),
-            'returns': self.returns,
-            'volatility': self.volatility
+            'returns': {k.strftime('%d-%m-%Y'): str(round(v, 4)).replace('nan', 'null')
+                        for k, v in self.returns.items()},
+            'volatility': {k.strftime('%d-%m-%Y'): str(round(v, 4)).replace('nan', 'null')
+                           for k, v in self.volatility.items()}
         }
 
 
@@ -42,12 +44,12 @@ class PortfolioStatisticsTransfer(PortfolioTransfer):
 
     def to_json(self):
         json = super().to_json()
-        json['annualized_returns'] = str(self.annualized_returns)
-        json['annualized_volatility'] = str(self.annualized_volatility)
-        json['maximum_drawdown'] = str(self.maximum_drawdown)
-        json['sharpe_ratio'] = str(self.sharpe_ratio)
-        json['sortino_ratio'] = {k: str(v) for k, v in self.sortino_ratio.items()}
-        json['calmar_ratio'] = str(self.calmar_ratio)
+        json['annualized_returns'] = str(round(self.annualized_returns, 4))
+        json['annualized_volatility'] = str(round(self.annualized_volatility, 4))
+        json['maximum_drawdown'] = str(round(self.maximum_drawdown, 4))
+        json['sharpe_ratio'] = str(round(self.sharpe_ratio, 4))
+        json['sortino_ratio'] = {k: str(round(v, 4)) for k, v in self.sortino_ratio.items()}
+        json['calmar_ratio'] = str(round(self.calmar_ratio, 4))
         return json
 
 
