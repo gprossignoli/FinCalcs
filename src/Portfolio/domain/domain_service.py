@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -55,8 +56,10 @@ class PortfolioStatisticsTransfer(PortfolioTransfer):
 
 class DomainService:
     @staticmethod
-    def create_portfolio_entity(symbols: tuple[Symbol], n_shares_per_symbols: dict[str, int]) -> Portfolio:
-        return Portfolio(symbols=symbols, n_shares_per_symbol=n_shares_per_symbols)
+    def create_portfolio_entity(symbols: tuple[Symbol], n_shares_per_symbols: dict[str, int],
+                                initial_date: Union[datetime.date, None],  end_date: Union[datetime.date, None]) -> Portfolio:
+        return Portfolio(symbols=symbols, n_shares_per_symbol=n_shares_per_symbols,
+                         initial_date=initial_date, end_date=end_date)
 
     @staticmethod
     def sharpe_ratio(entity: Portfolio):

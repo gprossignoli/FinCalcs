@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 
 from src.Portfolio.domain.domain_service import DomainService, PortfolioStatisticsTransfer
 from src.Portfolio.domain.portfolio import Portfolio
@@ -21,7 +22,8 @@ class DriverServiceInterface(metaclass=ABCMeta):
         self.domain_service = domain_service
 
     @abstractmethod
-    def create_portfolio(self, tickers: tuple[str], n_shares_per_symbol: dict[str, int]) -> PortfolioStatisticsTransfer:
+    def create_portfolio(self, tickers: tuple[str], n_shares_per_symbol: dict[str, int],
+                         initial_date: datetime.date, end_date: datetime.date) -> PortfolioStatisticsTransfer:
         raise NotImplemented
 
     @abstractmethod

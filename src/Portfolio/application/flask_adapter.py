@@ -1,3 +1,5 @@
+import datetime
+
 from src.Portfolio.domain.domain_service import DomainService, PortfolioStatisticsTransfer
 from src.Portfolio.domain.portfolio import Portfolio
 from src.Portfolio.domain.ports.driver_service_interface import DriverServiceInterface
@@ -13,7 +15,8 @@ class FlaskServiceAdapter(DriverServiceInterface):
         super().__init__(symbol_repository=symbol_repository, domain_service=domain_service,
                          symbol_domain_service=symbol_domain_service)
 
-    def create_portfolio(self, tickers: tuple[str], n_shares_per_symbol: dict[str, int]) -> PortfolioStatisticsTransfer:
+    def create_portfolio(self, tickers: tuple[str], n_shares_per_symbol: dict[str, int],
+                         initial_date: datetime.date, end_date: datetime.date) -> PortfolioStatisticsTransfer:
         if any(tickers) in st.EXCHANGES:
             raise PortfolioException(error="Invalid ticker")
 
@@ -30,7 +33,8 @@ class FlaskServiceAdapter(DriverServiceInterface):
                                                 daily_returns=symbol.get('daily_returns'),
                                                 dividends=symbol.get('dividends')))
         portfolio = self.domain_service.create_portfolio_entity(symbols=tuple(symbols),
-                                                                n_shares_per_symbols=n_shares_per_symbol)
+                                                                n_shares_per_symbols=n_shares_per_symbol,
+                                                                initial_date=initial_date, end_date=end_date)
         statistics = self._compute_portfolio_statistics(portfolio)
 
         return PortfolioStatisticsTransfer(symbols=tuple(symbol.ticker for symbol in portfolio.symbols),
