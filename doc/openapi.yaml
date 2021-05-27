@@ -1,0 +1,285 @@
+openapi: 3.0.1
+info:
+  title: FinCalcs
+  description: 'FinCalcs is a web service that consumes financial data and then transforms it to provide, via api, financial statistics for individual symbols, stocks or indexes for instance, and also for portfolios based on the available symbols.' 
+  contact:
+    email: gprauxiliar@gmail.com
+  version: 1.0.0
+externalDocs:
+  description: Source Code
+  url: http://github.com/gprossignoli/FinCalcs
+servers:
+- url: https://localhost:8001
+tags:
+- name: symbol
+  description: Related to individual symbols.
+- name: portfolio
+  description: Related to portfolios.
+paths:
+  /symbols/{ticker}:
+    get:
+      tags:
+      - symbol
+      summary: Returns symbol information.
+      description: For the symbol specified by its ticker, returns all its information.
+      operationId: get_symbol
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+          required: true
+          description: Symbol's ticker.
+      responses:
+        200:
+          description: successful operation.
+          content:
+            application/json:
+              schema:
+                  oneOf:
+                    - $ref: '#/components/schemas/Symbol'
+                    - $ref: '#/components/schemas/Stock'
+        404:
+          description: Symbol is not in the system.
+          content: 
+            application/json:
+              example:
+                'Error: symbol not found'
+        500:
+          description: Internal Server Error
+          content: {}
+  /symbols/stocks:
+    get:
+      tags:
+      - symbol
+      summary: Returns all available stocks information.
+      description: For each available stock in the system, returns its ticker, isin, name, exchange, last price date, last price value, last return date, and last return value.
+      operationId: get_stocks_list
+      responses:
+        200:
+          description: successful operation.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockInformation'
+        500:
+          description: Internal Server Error
+          content: {}
+          
+  /symbols/indexes:
+    get:
+      tags:
+      - symbol
+      summary: Returns all available indexes information.
+      description: For each available index in the system, returns its ticker, name, last price date, last price value, last return date, and last return value.
+      operationId: get_indexes_list
+      responses:
+        200:
+          description: successful operation.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SymbolInformation'
+        500:
+          description: Internal Server Error
+          content: {}
+          
+  /portfolio:
+    post:
+      tags:
+      - portfolio
+      summary: Returns statistics for a portfolio created from the symbols selected by the client.
+      operationId: get_portfolio_analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tickers:
+                  type: array
+                  items:
+                    type: string
+                    example:
+                      - ANA.MC
+                      - NTGY.MC
+                sharesPerStock:
+                  type: array
+                  items:
+                    type: string
+                    example:
+                      - ANA.MC:2
+                      - NTGY.MC:3
+      responses:
+        200:
+          description: Returns all portfolio information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        500:
+          description: Internal Server Error
+          content: {}
+components:
+  schemas:
+      Closures:
+        example:
+          03-01-2000: '20.71'
+          26-04-2021: '144.5'
+      Returns:
+        example:
+          03-01-2000: '-7.02'
+          26-04-2021: '3.1'
+      Dividends:
+        example:
+          17-01-2000: '40'
+          30-06-2020: '1.9365'
+      Volatility:
+        example:
+          03-01-2000: '-7.02'
+          26-04-2021: '3.1'
+      StockInformation:
+        type: object
+        properties:
+          ticker:
+            type: string
+            example: ANA.MC
+          name:
+            type: string
+            example: acciona, s.a.
+          isin:
+            type: string
+            example: ES0125220311
+          exchange:
+            type: string
+            example: ^IBEX
+      SymbolInformation:
+        type: object
+        properties:
+          ticker:
+            type: string
+            example: ^IBEX
+          name:
+            type: string
+            example: 'ibex 35'
+      Symbol:
+        type: object
+        properties:
+          ticker:
+            type: string
+            example: ANA.MC
+          name:
+            type: string
+            example: acciona, s.a.
+          fist_date:
+            type: string
+            example: 03-01-2000
+          last_date:
+            type: string
+            example: 26-04-2021
+          closures:
+            $ref: '#/components/schemas/Closures'
+          daily_returns:
+            $ref: '#/components/schemas/Returns'
+          cagr:
+            type: object
+            properties:
+              3yr:
+                type: string
+                example:
+                   -0.2269
+              5yr:
+                type: string
+                example:
+                   -0.4977
+      Stock:
+        type: object
+        properties:
+          isin:
+            type: string
+            example: ES0125220311
+          exchange:
+            type: string
+            example: ^IBEX
+          dividends:
+            $ref: '#/components/schemas/Dividends'
+          ticker:
+            type: string
+            example: ANA.MC
+          name:
+            type: string
+            example: acciona, s.a.
+          fist_date:
+            type: string
+            example: 03-01-2000
+          last_date:
+            type: string
+            example: 26-04-2021
+          closures:
+            $ref: '#/components/schemas/Closures'
+          daily_returns:
+            $ref: '#/components/schemas/Returns'
+          cagr:
+            type: object
+            properties:
+              3yr:
+                type: string
+                example:
+                   -0.2269
+              5yr:
+                type: string
+                example:
+                   -0.4977
+      Portfolio:
+        type: object
+        properties:
+          symbols: 
+            type: array
+            items:
+              type: string
+              example:
+                - ANA.MC
+                - NTGY.MC
+          total_shares:
+            type: integer
+            example: 5
+          weights:
+            type: object
+            example:
+              ANA.MC: 0.4
+              NTGY.MC: 0.6
+          first_date:
+            type: string
+            example: "03-01-2000"
+          last_date:
+            type: string
+            example: "19-04-2021"
+          returns:
+            $ref: '#/components/schemas/Returns'
+          volatility:
+            $ref: '#/components/schemas/Volatility'
+          annualized_returns:
+            type: number
+            example: -1.8454748921581015
+          annualized_volatility:
+            type: number
+            example: 1.2989669279697131
+          maximum_drawdown:
+            type: number
+            example: -2.478302563420016          
+          sharpe_ratio:
+            type: number
+            example: -1.4361219304280832  
+          sortino_ratio:
+            type: object
+            example:
+               "^IBEX": -1.0222317493233128
+          calmar_ratio:
+            type: number
+            example: 0.7527228191152646
+      
