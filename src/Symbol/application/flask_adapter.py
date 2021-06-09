@@ -40,8 +40,9 @@ class FlaskServiceAdapter(DriverServiceInterface):
         stocks = self.repository.get_all_symbols(symbol_type='stock')
         ret = []
         for stock in stocks:
-            last_price_data = list(stock['closures'].items())[0]
-            last_return_data = list(stock['daily_returns'].items())[0]
+            last_price_data = list(stock['closures'].items())[-1]
+            last_return_data = list(stock['daily_returns'].items())[-1]
+
             ret.append(StockInformationTransfer(ticker=stock['ticker'], isin=stock['isin'], name=stock['name'],
                                                 exchange=stock['exchange'],
                                                 last_price={'date': last_price_data[0], 'value': last_price_data[1]},
