@@ -49,19 +49,25 @@ class RabbitmqServiceAdapter(DrivenServiceInterface):
         stock = self.domain_service.create_symbol_entity(ticker=stock_info['ticker'], isin=stock_info['isin'],
                                                          name=stock_info['name'], closures=closures,
                                                          exchange=stock_info['exchange'], dividends=dividends)
-        try:
-            self.repository.save_stock(stock)
-        except RepositoryException:
+        if stock.closures.empty or stock.daily_returns.empty:
             pass
+        else:
+            try:
+                self.repository.save_stock(stock)
+            except RepositoryException as e:
+                st.logger.exception(e)
 
     def save_index(self, index_info: dict) -> None:
         closures = index_info['historic']['close']
         index = self.domain_service.create_symbol_entity(ticker=index_info['ticker'], name=index_info['name'],
                                                          closures=closures)
-        try:
-            self.repository.save_index(index)
-        except RepositoryException:
+        if index.closures.empty or index.daily_returns.empty:
             pass
+        else:
+            try:
+                self.repository.save_index(index)
+            except RepositoryException as e:
+                st.logger.exception(e)
 
     def __create_rabbit_consumer(self, rabbit_queue: str, exchange: str, routing_key: str) -> RabbitmqConsumer:
         return RabbitmqConsumer(messages_received_queue=self.__consumers_queue, rabbit_queue=rabbit_queue,
