@@ -1,15 +1,26 @@
-import logging
 import os
-import configparser
+import logging
 from logging.handlers import RotatingFileHandler
 
+from environ import environ
+
 ROOT_DIR = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
-settings_file = open(os.path.join(ROOT_DIR, "settings.ini"), "r")
-config = configparser.ConfigParser()
-config.read(os.path.join(ROOT_DIR, "settings.ini"))
+ENV_FILE = os.path.abspath(os.path.join(ROOT_DIR, ".env"))
 
-MONGO_HOST, MONGO_PORT = config.get("DB", "mongo_db").split(":")
+env = environ.Env(
+    MONGO_DB=(str, ""),
+    MONGODB_USER=(str, ""),
+    MONGODB_PASS=(str, ""),
+    RABBIT_HOST=(str, ""),
+    RABBIT_PORT=(int, None),
+    RABBIT_USER=(str, ""),
+    RABBIT_PASSWORD=(str, ""),
+    RABBIT_VHOST=(str, ""),
+)
 
+env.read_env(ENV_FILE)
+
+MONGO_HOST, MONGO_PORT = env("MONGO_DB").split(":")
 
 # LOGGING CONFIG
 
@@ -38,11 +49,11 @@ logger.addHandler(info_logger)
 logger.addHandler(error_logger)
 
 # Rabbitmq data
-RABBIT_HOST = config.get("RABBIT", "rabbit_host")
-RABBIT_PORT = config.get("RABBIT", "rabbit_port")
-RABBIT_USER = config.get("RABBIT", "rabbit_user")
-RABBIT_PASSW = config.get("RABBIT", "rabbit_password")
-RABBIT_VHOST = config.get("RABBIT", "rabbit_vhost")
+RABBIT_HOST = env("RABBIT_HOST")
+RABBIT_PORT = env("RABBIT_PORT")
+RABBIT_USER = env("RABBIT_USER")
+RABBIT_PASSW = env("RABBIT_PASSWORD")
+RABBIT_VHOST = env("RABBIT_VHOST")
 
 SYMBOLS_EXCHANGE = 'findata_symbols'
 SYMBOLS_EXCHANGE_TYPE = 'topic'
@@ -50,7 +61,6 @@ SYMBOLS_QUEUE = 'fincalcs_symbols'
 SYMBOLS_TOPIC_ROUTING_KEY = 'findata.symbol.#'
 SYMBOLS_STOCK_ROUTING_KEY = 'findata.symbol.stock'
 SYMBOLS_INDEX_ROUTING_KEY = 'findata.symbol.index'
-
 
 # Ibex35, S&P500, Dow Jones, Nasdaq, Euro stoxx50, EURONEXT100, Ibex Medium Cap.
 EXCHANGES = ('^IBEX', '^GSPC', '^DJI', '^IXIC', '^STOXX50E', '^N100', 'INDC.MC')

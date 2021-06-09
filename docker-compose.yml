@@ -1,6 +1,19 @@
 version: "3.8"
    
 services:
+  mongodb:
+    image: mongo:4.4-bionic
+    container_name: fincalcs_mongodb
+    environment:
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASS=${MONGODB_PASS}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+      - mongo-configdb:/data/configdb
+    networks:
+      - invest-system
   fincalcs:
     container_name: fincalcs_service
     build: .
@@ -11,19 +24,7 @@ services:
         condition: service_started
     networks:
       - invest-system
-  mongodb:
-    image: mongo:4.4-bionic
-    container_name: fincalcs_mongodb
-    environment:
-      - 'MONGODB_USER=fincalcs'
-      - 'MONGODB_PASS=fincalcspass'
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodata:/data/db
-      - mongo-configdb:/data/configdb
-    networks:
-      - invest-system
+    env_file: .env
 
 volumes:
   mongodata:

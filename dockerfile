@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY main.py  .
-COPY settings.ini .
+COPY .env .
 RUN touch fincalcs.log fincalcs_errors.log
 COPY src ./src
 
