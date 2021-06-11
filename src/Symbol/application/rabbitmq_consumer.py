@@ -83,6 +83,7 @@ class RabbitmqConsumer:
             try:
                 channel = self.connection.channel()
 
+                channel.exchange_declare(exchange=st.SYMBOLS_EXCHANGE, exchange_type='topic', durable=True)
                 channel.queue_declare(queue=self.__rabbit_queue)
                 channel.basic_qos(prefetch_count=1)
                 channel.queue_bind(exchange=self.__rabbit_exchange, queue=self.__rabbit_queue,
