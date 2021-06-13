@@ -1,0 +1,20 @@
+version: "3.8"
+   
+services:
+
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    container_name: invest_system_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "finsystem"
+      RABBITMQ_DEFAULT_PASS: "finsystemuserpass"
+      RABBITMQ_DEFAULT_VHOST: "finsystem"
+    ports:
+        - "15672:15672"
+        - "5672:5672"
+    networks:
+        - invest-system
+
+networks:
+    invest-system:
+        external: true
